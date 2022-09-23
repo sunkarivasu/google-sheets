@@ -7,6 +7,7 @@ import {GiCancel} from "react-icons/gi";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import LoadingSpinner from "./loadingSpinner";
+import { Audio,Circles, ColorRing, Oval, Rings } from 'react-loader-spinner'
 
 function Home()
 {
@@ -24,6 +25,10 @@ function Home()
     var [newEmployeeDetials,setNewEmployeeDetials] = useState(newEmployeeInitialDetials);
     var [rowToBeModified,setRowToBeModified] = useState(-1);
     var [loading,setLoading] = useState(true);
+    var [isAdding,setIsAdding] = useState(false);
+    var [isModifying,setIsModifying] = useState(false);
+    var [isDeleting,setIsDeleting] = useState(false);
+    var [deleteIndex,setDeleteIndex] = useState(-1);
     var [modifiedRecord,setModifiedRecord] = useState(
         {
             name:"",
@@ -52,6 +57,14 @@ function Home()
             [e.target.name]:e.target.value
         });
     }
+
+    // const setLocalLoader = (name) => {
+    //     const ele = document.getElementsByName(name)[0]
+    //     console.log(ele);
+    //     ele.append("<h1><Oval visible={true} height={18} width={18} strokeWidth={6} strokeWidthSecondary={6} color={'white'}/></h1>");
+        
+
+    // }
 
     const validateForm = (name) => {
         var nameErr = ""
@@ -139,6 +152,7 @@ function Home()
 
     const deleteEmployeeDetials = (rowNumber) => {
         console.log(rowNumber);
+        setIsDeleting(true);
         axios.post("https://script.google.com/macros/s/AKfycbzpqwCydm-iHOaSiC1Q7OAvCwdsUmqShXa_8PyOIZkKoFTpbTFU14AVOXK8tCPje4jz/exec?action=deleteEmployee",
         {"rowNumber":rowNumber},{
             headers: {
@@ -148,6 +162,8 @@ function Home()
         .then((res) => {
             console.log(res.data);
             fetchEmployeeDetials();
+            setIsDeleting(false);
+            setDeleteIndex(-1);
         })
         .catch((err) => {
             console.log(err);
@@ -158,7 +174,7 @@ function Home()
         console.log(data);
         if(validateForm("modifiedForm"))
         {
-            setLoading(true);
+            setIsModifying(true);
             axios.post("https://script.google.com/macros/s/AKfycbzpqwCydm-iHOaSiC1Q7OAvCwdsUmqShXa_8PyOIZkKoFTpbTFU14AVOXK8tCPje4jz/exec?action=modifyEmployee",
             {
                 "rowNumber":rowNumber,
@@ -171,7 +187,8 @@ function Home()
             .then((res) => {
                 console.log(res.data);
                 fetchEmployeeDetials();
-                setRowToBeModified(-1)
+                setRowToBeModified(-1);
+                setIsModifying(false);
             })
             .catch((err) => 
             {
@@ -193,9 +210,9 @@ function Home()
 
     const addEmployee = () =>
     {
-        if(validateForm("newForm"))
+        if(validateForm("newForm") && isAdding===false)
         {
-            setLoading(true);
+            setIsAdding(true);
             axios.post("https://script.google.com/macros/s/AKfycbyFxcv1wl2fMoQz8ZwSoxWV-nqiz4Ooo1qk-sctvn9_THxIJdBkITzKUHGcLsEUdEMf/exec?action=addEmployee",
             newEmployeeDetials,{
                 headers: {
@@ -203,7 +220,8 @@ function Home()
                 }
             })
             .then((res) => {console.log(res.data);
-            setAddNewMemberBtnClicked(false)
+            setAddNewMemberBtnClicked(false);
+            setIsAdding(false);
             setNewEmployeeDetials(newEmployeeInitialDetials);
             fetchEmployeeDetials();
             })
@@ -228,9 +246,7 @@ function Home()
                 </div>
             </div>
             <hr style={{"height":"5px"}}/>
-            {loading===true ? <div className="spinner-container">
-                <LoadingSpinner/>
-                </div>:<div className="employee-detials-tabular-data">
+            <div className="employee-detials-tabular-data">
                 <div className="row">
                     <div className="th col-3 detials head-detials">Name</div>
                     <div className="th col-2 detials head-detials">Age</div>
@@ -239,7 +255,9 @@ function Home()
                     <div className="th col-2 detials head-detials"></div>
                 </div>
                 <hr className="shortMargin"/>
-                {employeeDetials && 
+                {loading?<div className="spinner-container">
+                    <LoadingSpinner/>
+                </div>:employeeDetials && 
                     employeeDetials.map((employee,index) => 
                     {
                         if(rowToBeModified === index)
@@ -253,7 +271,7 @@ function Home()
                                     </select></div>
                                 <div className="col-3 detials head-detials"><input type="text" value={modifiedRecord.role} name="role" onChange={handleChangeModifiedRecordInput}/><p className="err">{modifiedRecord.roleErr}</p></div>
                                 <div className="col-2 detials head-detials">
-                                    <button className="btn btn-icon" id={index} onClick={() => {modifyEmployeeDetials(index,[modifiedRecord.name,modifiedRecord.age,modifiedRecord.gender,modifiedRecord.role]);}}><FaSave/></button>
+                                    <button className="btn btn-icon" id={index} onClick={() => {modifyEmployeeDetials(index,[modifiedRecord.name,modifiedRecord.age,modifiedRecord.gender,modifiedRecord.role]);}}>{isModifying?<Oval width={15} height={15} color={"black"} strokeWidth={6} strokeWidthSecondary={6}/>:<FaSave/>}</button>
                                     <button className="btn btn-icon" id={index} onClick={() => {setRowToBeModified(-1)}}><GiCancel/></button>
                                 </div>
                                 <hr/>
@@ -268,7 +286,7 @@ function Home()
                                     <div className="col-3 detials">{employee.role}</div>
                                     <div className="col-2 detials">
                                         <button className="btn btn-icon" id={index} onClick={() => {setRowToBeModified(index);setModifiedRecord(employee);}}><FaEdit/></button>
-                                        <button className="btn btn-icon" id={index} onClick={() => {setLoading(true);deleteEmployeeDetials(index)}}><AiFillDelete/></button>
+                                        <button className="btn btn-icon" id={index} onClick={() => {setDeleteIndex(index);deleteEmployeeDetials(index)}}>{isDeleting && deleteIndex===index?<Oval width={15} height={15} color={"black"} strokeWidth={6} strokeWidthSecondary={6}/>:<AiFillDelete/>}</button>
                                     </div>
                                     <hr/>
                                 </div>
@@ -288,12 +306,12 @@ function Home()
                     </div>
                     <div className="col-3"><input type="text" name="role" placeholder="role" value={newEmployeeDetials.role} onChange={handleChangeInput}/><p className="err">{newEmployeeDetials.roleErr}</p></div>
                     <div className="col-3">
-                        <button className="btn add-new-member-btn" onClick={() => {addEmployee();}}>Add</button>
+                        <button className="btn add-new-member-btn " name="a" onClick={() => {addEmployee();}} disabled={false}>{isAdding?<Oval visible={true} height={18} width={18} strokeWidth={6} strokeWidthSecondary={6} color={'white'}/>:"Add"}</button>
                         <button className="btn add-new-member-btn" onClick={() => {setAddNewMemberBtnClicked(false);setNewEmployeeDetials(newEmployeeInitialDetials)}}>Cancel</button>
                     </div>
                 </div>
                 }
-            </div>}
+            </div>
             
         </div>
         
