@@ -6,6 +6,7 @@ import {AiFillDelete} from "react-icons/ai";
 import {GiCancel} from "react-icons/gi";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import LoadingSpinner from "./loadingSpinner";
 
 function Home()
 {
@@ -22,6 +23,7 @@ function Home()
     var [addNewMemberBtnClicked,setAddNewMemberBtnClicked] = useState(false);
     var [newEmployeeDetials,setNewEmployeeDetials] = useState(newEmployeeInitialDetials);
     var [rowToBeModified,setRowToBeModified] = useState(-1);
+    var [loading,setLoading] = useState(true);
     var [modifiedRecord,setModifiedRecord] = useState(
         {
             name:"",
@@ -156,6 +158,7 @@ function Home()
         console.log(data);
         if(validateForm("modifiedForm"))
         {
+            setLoading(true);
             axios.post("https://script.google.com/macros/s/AKfycbzpqwCydm-iHOaSiC1Q7OAvCwdsUmqShXa_8PyOIZkKoFTpbTFU14AVOXK8tCPje4jz/exec?action=modifyEmployee",
             {
                 "rowNumber":rowNumber,
@@ -182,7 +185,9 @@ function Home()
     const fetchEmployeeDetials = () => {
         axios.get("https://script.google.com/macros/s/AKfycbzpqwCydm-iHOaSiC1Q7OAvCwdsUmqShXa_8PyOIZkKoFTpbTFU14AVOXK8tCPje4jz/exec")
         .then((res) => {console.log(res.data.data);
-        setEmployeeDetials(res.data.data)})
+        setEmployeeDetials(res.data.data);
+        setLoading(false);
+    })
         .catch((err) => console.log(err))
     }
 
@@ -190,6 +195,7 @@ function Home()
     {
         if(validateForm("newForm"))
         {
+            setLoading(true);
             axios.post("https://script.google.com/macros/s/AKfycbyFxcv1wl2fMoQz8ZwSoxWV-nqiz4Ooo1qk-sctvn9_THxIJdBkITzKUHGcLsEUdEMf/exec?action=addEmployee",
             newEmployeeDetials,{
                 headers: {
@@ -217,12 +223,14 @@ function Home()
                     <p className="heading">Riktam Technologies</p>
                     <p className="company-description">We, the engineers at Riktam build Web and Mobile Applications using the latest technologies, for startups around the world.</p>
                 </div>
-                <div>
+                <div >
                     <button className="btn add-new-member-btn" onClick={() => setAddNewMemberBtnClicked(true)} disabled={addNewMemberBtnClicked}>Add New Employee</button>
                 </div>
             </div>
             <hr style={{"height":"5px"}}/>
-            <div className="employee-detials-tabular-data">
+            {loading===true ? <div className="spinner-container">
+                <LoadingSpinner/>
+                </div>:<div className="employee-detials-tabular-data">
                 <div className="row">
                     <div className="th col-3 detials head-detials">Name</div>
                     <div className="th col-2 detials head-detials">Age</div>
@@ -245,7 +253,7 @@ function Home()
                                     </select></div>
                                 <div className="col-3 detials head-detials"><input type="text" value={modifiedRecord.role} name="role" onChange={handleChangeModifiedRecordInput}/><p className="err">{modifiedRecord.roleErr}</p></div>
                                 <div className="col-2 detials head-detials">
-                                    <button className="btn btn-icon" id={index} onClick={modifyEmployeeDetials.bind(this,index,[modifiedRecord.name,modifiedRecord.age,modifiedRecord.gender,modifiedRecord.role])}><FaSave/></button>
+                                    <button className="btn btn-icon" id={index} onClick={() => {modifyEmployeeDetials(index,[modifiedRecord.name,modifiedRecord.age,modifiedRecord.gender,modifiedRecord.role]);}}><FaSave/></button>
                                     <button className="btn btn-icon" id={index} onClick={() => {setRowToBeModified(-1)}}><GiCancel/></button>
                                 </div>
                                 <hr/>
@@ -259,8 +267,8 @@ function Home()
                                     <div className="col-2 detials">{employee.gender}</div>
                                     <div className="col-3 detials">{employee.role}</div>
                                     <div className="col-2 detials">
-                                        <button className="btn btn-icon" id={index} onClick={() => {setRowToBeModified(index);setModifiedRecord(employee)}}><FaEdit/></button>
-                                        <button className="btn btn-icon" id={index} onClick={deleteEmployeeDetials.bind(this,index)}><AiFillDelete/></button>
+                                        <button className="btn btn-icon" id={index} onClick={() => {setRowToBeModified(index);setModifiedRecord(employee);}}><FaEdit/></button>
+                                        <button className="btn btn-icon" id={index} onClick={() => {setLoading(true);deleteEmployeeDetials(index)}}><AiFillDelete/></button>
                                     </div>
                                     <hr/>
                                 </div>
@@ -280,12 +288,12 @@ function Home()
                     </div>
                     <div className="col-3"><input type="text" name="role" placeholder="role" value={newEmployeeDetials.role} onChange={handleChangeInput}/><p className="err">{newEmployeeDetials.roleErr}</p></div>
                     <div className="col-3">
-                        <button className="btn add-new-member-btn" onClick={addEmployee}>Add</button>
+                        <button className="btn add-new-member-btn" onClick={() => {addEmployee();}}>Add</button>
                         <button className="btn add-new-member-btn" onClick={() => {setAddNewMemberBtnClicked(false);setNewEmployeeDetials(newEmployeeInitialDetials)}}>Cancel</button>
                     </div>
                 </div>
                 }
-            </div>
+            </div>}
             
         </div>
         
